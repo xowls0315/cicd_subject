@@ -1,0 +1,145 @@
+다음 단계 상세 가이드
+
+1단계: 로컬 환경 검증
+1-1. 프로젝트 디렉토리로 이동
+cd c:\CICD_FullStack_HwangTaeJin\cicd\subject
+
+1-2. 의존성 설치 확인
+# node_modules가 없거나 package.json이 변경되었다면npm install# 또는 더 빠르고 안정적인 방법npm ci
+
+1-3. Lint 검증
+npm run lint
+성공: 아무 에러 없이 완료
+실패: 에러 메시지 확인 후 수정
+
+1-4. 테스트 실행
+npm test
+예상 결과: 3개 테스트 모두 통과
+  PASS src/app.controller.spec.ts    AppController      GET /hello        √ should return "Hello World"      GET /hello/docker        √ should return "Hello Docker"      GET /hello/cicd        √ should return "Hello CI/CD"
+
+1-5. 빌드 검증
+npm run build
+성공: dist 폴더 생성 확인
+확인: dist/main.js 파일 존재 여부
+
+1-6. 로컬 서버 실행 및 API 테스트
+# 개발 모드로 실행 (watch 모드)npm run start:dev
+서버가 실행되면 (보통 http://localhost:3000), 새 터미널에서:
+# Windows PowerShellcurl http://localhost:3000/hellocurl http://localhost:3000/hello/dockercurl http://localhost:3000/hello/cicd# 또는 브라우저에서 직접 접속# http://localhost:3000/hello# http://localhost:3000/hello/docker# http://localhost:3000/hello/cicd
+예상 응답:
+GET /hello → Hello World
+GET /hello/docker → Hello Docker
+GET /hello/cicd → Hello CI/CD
+
+2단계: Docker 환경 검증
+2-1. Docker 설치 확인
+# Docker 버전 확인docker --versiondocker-compose --version# Docker가 실행 중인지 확인docker ps
+
+2-2. Dockerfile 빌드 테스트
+# Docker 이미지 빌드docker build -t subject-app .# 빌드 성공 확인docker images | grep subject-app
+
+2-3. Docker Compose로 전체 환경 실행
+# 백그라운드로 실행docker-compose up -d# 또는 로그를 보면서 실행docker-compose up
+
+2-4. 컨테이너 상태 확인
+# 실행 중인 컨테이너 확인docker-compose ps# 예상 결과:# NAME            IMAGE          STATUS# subject-app      subject-app    Up# subject-mysql    mysql:8.0      Up
+
+2-5. 컨테이너 로그 확인
+# 앱 로그 확인docker-compose logs app# MySQL 로그 확인docker-compose logs db# 모든 로그 실시간 확인docker-compose logs -f
+
+2-6. Docker 환경에서 API 테스트
+# 컨테이너가 실행 중이면curl http://localhost:3000/hellocurl http://localhost:3000/hello/dockercurl http://localhost:3000/hello/cicd
+
+2-7. MySQL 연결 확인 (선택)
+# MySQL 컨테이너에 접속docker exec -it subject-mysql mysql -usubject_user -psubject_password# MySQL에서 데이터베이스 확인SHOW DATABASES;USE subject_db;EXIT;
+
+2-8. 컨테이너 정리
+# 컨테이너 중지docker-compose down# 볼륨까지 삭제 (데이터 초기화)docker-compose down -v# 이미지까지 삭제docker-compose down --rmi all
+
+3단계: GitHub CI/CD 파이프라인 검증
+3-1. Git 저장소 초기화 (아직 안 했다면)
+cd c:\CICD_FullStack_HwangTaeJin\cicd\subject# Git 초기화 (이미 되어있다면 생략)git init# .gitignore 확인cat .gitignore
+
+3-2. GitHub 저장소 생성
+GitHub.com 접속
+New repository 클릭
+Repository name: subject (또는 원하는 이름)
+Public 또는 Private 선택
+Create repository 클릭
+
+3-3. 로컬 파일 커밋 및 푸시
+# 현재 상태 확인git status# 모든 파일 추가git add .# 커밋git commit -m "feat: Nest.js CI/CD 프로젝트 초기 설정- API 엔드포인트 구현 (/hello, /hello/docker, /hello/cicd)- 테스트 케이스 작성 (3개)- Dockerfile 및 docker-compose.yml 구성- CI/CD 파이프라인 설정 (Lint, Test, Build)"# 원격 저장소 추가 (YOUR_USERNAME과 YOUR_REPO_NAME을 실제 값으로 변경)git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git# 브랜치 이름 확인 및 설정git branch -M main# 푸시git push -u origin main
+
+3-4. GitHub Actions 확인
+GitHub 저장소 페이지 접속
+Actions 탭 클릭
+워크플로우 실행 확인
+"CI Pipeline" 워크플로우가 자동 실행됨
+3개 Job 확인: Lint, Test, Build
+
+3-5. 각 Job 상세 확인
+Lint Job 클릭
+"Run linter" 단계에서 성공 확인
+Test Job 클릭
+"Run tests" 단계에서 3개 테스트 통과 확인
+Build Job 클릭
+"Build application" 단계에서 성공 확인
+"Verify build output" 단계에서 dist 디렉토리 확인
+
+3-6. 실패 시 디버깅
+실패한 Job 클릭
+실패한 Step의 로그 확인
+로컬에서 동일한 명령어 실행하여 재현
+수정 후 다시 커밋 및 푸시
+
+4단계: 최종 검증 체크리스트
+4-1. 코드 검증
+[ ] npm run lint 통과
+[ ] npm test - 3개 테스트 모두 통과
+[ ] npm run build - 빌드 성공
+
+4-2. 로컬 실행 검증
+[ ] npm run start:dev 실행 성공
+[ ] GET /hello → "Hello World" 응답
+[ ] GET /hello/docker → "Hello Docker" 응답
+[ ] GET /hello/cicd → "Hello CI/CD" 응답
+
+4-3. Docker 검증
+[ ] docker build 성공
+[ ] docker-compose up 성공
+[ ] 컨테이너 2개 실행 중 (app, db)
+[ ] Docker 환경에서 API 응답 정상
+
+4-4. CI/CD 검증
+[ ] GitHub에 코드 푸시 완료
+[ ] GitHub Actions 자동 실행
+[ ] Lint Job 성공
+[ ] Test Job 성공
+[ ] Build Job 성공
+
+5단계: 문제 해결 가이드
+문제 1: Lint 에러
+# 에러 메시지 확인npm run lint# 자동 수정 시도 (이미 --fix 옵션 포함)# 수동 수정 필요 시 에러 메시지에 따라 수정
+문제 2: 테스트 실패
+# 상세 로그 확인npm test -- --verbose# 특정 테스트만 실행npm test -- app.controller.spec.ts
+문제 3: Docker 빌드 실패
+# 빌드 로그 확인docker build -t subject-app . --no-cache# 각 단계별로 확인docker build -t subject-app . --progress=plain
+문제 4: Docker Compose 실행 실패
+# 로그 확인docker-compose logs# 컨테이너 재시작docker-compose restart# 완전히 재시작docker-compose downdocker-compose up -d
+문제 5: GitHub Actions 실패
+Actions 탭에서 실패한 Job 클릭
+실패한 Step의 로그 확인
+로컬에서 동일한 명령어 실행
+수정 후 커밋 및 푸시
+
+6단계: 추가 개선 사항 (선택)
+6-1. 테스트 커버리지 확인
+npm run test:cov# coverage 폴더 생성 확인# coverage/lcov-report/index.html 브라우저에서 열기
+
+6-2. 프로덕션 빌드 테스트
+# 빌드npm run build# 프로덕션 모드로 실행npm run start:prod# 다른 터미널에서 테스트curl http://localhost:3000/hello
+
+6-3. Docker 이미지 최적화 확인
+# 이미지 크기 확인docker images subject-app# 이미지 상세 정보docker inspect subject-app
+빠른 참조 명령어 모음
+# 로컬 검증cd c:\CICD_FullStack_HwangTaeJin\cicd\subjectnpm cinpm run lintnpm testnpm run buildnpm run start:dev# Docker 검증docker-compose up -ddocker-compose psdocker-compose logs -f appdocker-compose down# Git 작업git add .git commit -m "커밋 메시지"git push origin main
